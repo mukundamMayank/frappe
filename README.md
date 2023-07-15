@@ -6,11 +6,11 @@
 
 # Features
 1. To store Books
- 2.Get Books by author & title
- 3. Register new Members
- 4. Issue Books
- 5. Return Book
- 6. Check Members
- 7. Delete Members
- 8. Delete Books
+2.Get Books by author & title
+3. Register new Members
+4. Issue Books
+5. Return Book
+6. Check Members
+7. Delete Members
+8. Delete Books
 
