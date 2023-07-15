@@ -6,7 +6,7 @@
 
 # Features
 1. To store Books
-2.Get Books by author & title
+2. Get Books by author & title
 3. Register new Members
 4. Issue Books
 5. Return Book
