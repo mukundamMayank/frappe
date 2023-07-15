@@ -1,15 +1,3 @@
-# import requests
-# import json
-
-
-# title = None
-# authors = None
-
-
-# response = requests.get('https://frappe.io/api/method/frappe-library?publisher=University Of Chicago Press&page=12').content.decode('utf-8')
-# response_json = json.loads(response)
-# print(response_json)
-
 import mysql.connector
 from flask import Flask, request, jsonify
 from datetime import datetime
@@ -41,106 +29,46 @@ def get_mysql_connection():
 connection = get_mysql_connection()
 cursor = connection.cursor()
 
-# # @app.route('storeBooks', methods=['POST'])
-# def helper(request):
-
-# 	data = request.get_json()
-
-# 	# if len(data) == 0:
-# 	# 	return jsonify({'message': 'Need to make atleast one entry field'})
-
-# 	base_url = "https://frappe.io/api/method/frappe-library"
-
-# 	query_params = ""
-# 	if 'title' in data:
-# 		if len(query_params) == 0:
-# 			query_params+="?"+"title="+data.get('title')
-# 		else:
-# 			query_params+="&"+"title="+data.get('title')
-
-# 	if 'authors' in data:
-# 		if len(query_params) == 0:
-# 			query_params+="?"+"authors="+data.get('authors')
-# 		else:
-# 			query_params+="&"+"authors="+data.get('authors')
-
-# 	if 'publisher' in data:
-# 		if len(query_params) == 0:
-# 			query_params+="?"+"publisher="+data.get('publisher')
-# 		else:
-# 			query_params+="&"+"publisher="+data.get('publisher')
-
-# 	url = base_url + query_params
-# 	# print(url)
-
-# 	page = 1
-# 	last_page = None
-# 	books = []
-# 	while last_page is None or page<=last_page:
-# 		final_url = url + f"&page={page}"
-# 		response = requests.get(final_url)
-# 		print(final_url, ' ', response.status_code)
-# 		if response.status_code == 200:
-# 			# print(response.json())
-# 			books.append(response.json())
-
-# 			link_header = response.headers.get('Link', '')
-# 			last_page_match = re.search(r'&page=(\d+)>; rel="last"', link_header)
-
-# 			print(page, ' ', last_page)
-
-# 			if last_page_match:
-# 				last_page = int(last_page_match.group(1))
-
-# 			page += 1
-# 		else:
-# 			page += 1
-
-# 	return books
-
-
-
 @app.route('/storeBooks', methods=['POST'])
 def storeBooks():
 	data  = request.get_json()
+	print(' ###### ',  data)
 	query = None
 	params = None
 	total_required_books = 0
-	print(data)
 
-	if 'requirement' in data:
+	if 'requirement' in data and (data['requirement']  != 0 or data['requirement']  != ''):
 		total_required_books = data['requirement']
 
-	if 'title' in data and data['title']!='':
+	if 'title' in data and (data['title']!='' and data['title'] is not None):
 		if query is None:
 			query = "Select id, title, author, publisher from Library where title = %s"
 			params = (data['title'], )
 		else:
-			query+="AND title = %s"
+			query+=" AND title = %s"
 			params+= (data['title'])
 
-	if 'publisher' in data and data['publisher']!='':
+	if 'publisher' in data and (data['publisher']!='' and data['publisher'] is not None):
 		if query is None:
 			query = "Select id, title, author, publisher from Library where publisher = %s or publisher like %s"
 			params= (data['publisher'],f"%{data['publisher']}%", )
 		else:
-			query+="AND (publisher = %s or publisher LIKE %s)"
+			query+=" AND (publisher = %s or publisher LIKE %s)"
 			params+= (data['publisher'],f"%{data['publisher']}%", )
 
-	if 'author' in data and data['author']!='':
+	if 'author' in data and (data['author']!='' and data['author'] is not None):
 		if query is None:
 			query = "Select id, title, author, publisher from Library where author = %s or author like %s"
 			params = (data['author'], f"%{data['author']}%", )
 		else:
-			query+="AND (author = %s or author like %s)"
+			query+=" AND (author = %s or author like %s)"
 			params+= (data['author'], f"%{data['author']}%", )
 
-	print(query, ' ', params)
+
 	cursor.execute(query, params)
 	cnt = 0
 
 	rows = cursor.fetchall()
-	# print(rows)
 	for i in rows:
 		if int(total_required_books) != 0:
 			if cnt == int(total_required_books):
@@ -171,13 +99,6 @@ def storeBooks():
 			cursor.execute(insert_query, insert_params)
 			connection.commit()
 
-	# cursor.close()
-	# connection.close()
-
-
-			# cursor.execute(query, params)
-			# print(cursor.fetchone())
-
 
 	return {'message':'added successfully'}
 
@@ -185,11 +106,12 @@ def storeBooks():
 @app.route('/getBooks', methods = ['GET'])
 def getBooks():
 	data = request.args
-	# print(request.args)
 
 	query = None
 	params = None
-	if 'title' in data and data.get('title') != '':
+	print(data)
+	print(data.get('title'), ' ', data.get('author'))
+	if 'title' in data and data.get('title') != '' and data.get('title') is not None:
 		if query is None:
 			query = "Select * from Books where title = %s"
 			params = (data.get('title'), )
@@ -197,48 +119,20 @@ def getBooks():
 			query+= " and title = %s"
 			params+= (data.get('title'), )
 
-	if 'author' in data and data.get('author') != '':
+	if 'author' in data and data.get('author') != '' and data.get('author') is not None:
 		if query is None:
 			query = "Select * from Books where author = %s or author like %s"
 			params = (data.get('author'), f"%{data.get('author')}%",)
 		else:
-			query+="AND (author = %s or author like %s)"
+			query+=" AND (author = %s or author like %s)"
 			params+= (data.get('author'), f"%{data.get('author')}%", )
+	print(query, ' ', params)
 
-
-	print(query, params)
 	cursor.execute(query , params)
 
 	return {'res': cursor.fetchall()}
 
-	# if len(data) == 0:
-	# 	query = "Select * from Books"
-	# 	cursor.execute(query)
-	# 	return {'res': cursor.fetchall()}
-	# else:
-	# 	query = None
-	# 	params = None
-	# 	if 'title' in data and data.get('title') != '':
-	# 		if query is None:
-	# 			query = "Select * from Books where title = %s"
-	# 			params = (data.get('title'), )
-	# 		else:
-	# 			query+= " and title = %s"
-	# 			params+= (data.get('title'), )
-
-	# 	if 'author' in data and data.get('author') != '':
-	# 		if query is None:
-	# 			query = "Select * from Books where author = %s or author like %s"
-	# 			params = (data.get('author'), f"%{data.get('author')}%",)
-	# 		else:
-	# 			query+="AND (author = %s or author like %s)"
-	# 			params+= (data.get('author'), f"%{data.get('author')}%", )
-
-	# 	print(query, params)
-	# 	cursor.execute(query , params)
-	# 	return {'res': cursor.fetchall()}
-
-
+	
 @app.route('/registerMembers', methods = ['POST'])
 def registerMembers():
 	data = request.get_json()
@@ -270,7 +164,6 @@ def registerMembers():
 @app.route('/issueBooks', methods = ['POST'])
 def issueBooks():
 	data = request.get_json()
-	print(data)
 	email = None
 	title = None
 	if 'issue_email' not in data or 'title' not in data:
@@ -291,8 +184,6 @@ def issueBooks():
 	cursor.execute(title_check_query, params_title_check)
 	count2 = cursor.fetchone()[0]
 
-	print(count2, ' ', title)
-	print(count, ' ', email)
 
 	if count>0 and count2>0:
 		query = "SELECT id, outstanding_fee FROM Members WHERE email = %s"
@@ -343,8 +234,7 @@ def issueBooks():
 @app.route("/returnBook", methods = ['POST'])
 def returnBook():
 	data = request.get_json()
-	print(data)
-	if 'return_book_title' not in data:
+	if 'return_book_title' not in data or data['return_book_title'] is None:
 		return {'res': 'Please add the title of the book you want to return'}
 
 	title = data['return_book_title']
@@ -362,6 +252,15 @@ def returnBook():
 
 	book_id = temp[0]
 	stocks = temp[1]
+
+	member_query = "Select member_id from Members where email = %s"
+	member_params = (email, )
+	cursor.execute(member_query, member_params)
+	temp = cursor.fetchone()
+
+	print(temp)
+	if temp is None:
+		return {'res':' Member is not registered '}
 
 	member_to_book_query = "Select id, outstanding_fee from Members where email = %s"
 	member_to_book_params = (email, )
@@ -383,7 +282,6 @@ def returnBook():
 	connection = get_mysql_connection()
 	cursor = connection.cursor()
 
-	print(stocks, ' ', update_book_stock_query, ' ', update_book_stock_params)
 
 	books_list = books_id.split(',')
 	books_list = [curr_book_id for curr_book_id in books_list if curr_book_id != str(book_id)]
@@ -411,6 +309,15 @@ def deleteMembers():
 	data = request.get_json()
 	email = data['delete_member_email']
 
+	member_query = "Select member_id from Members where email = %s"
+	member_params = (email, )
+	cursor.execute(member_query, member_params)
+	temp = cursor.fetchone()
+
+	print(temp)
+	if temp is None:
+		return {'res':' Member is not registered '}
+
 	books_id_query = "Select id from Members where email=%s"
 	books_id_params = (email, )
 	# connection = get_mysql_connection()
@@ -419,7 +326,6 @@ def deleteMembers():
 	cursor.execute(books_id_query, books_id_params)
 
 	temp = cursor.fetchone()
-	print(temp)
 
 	if temp:
 
@@ -453,6 +359,14 @@ def deleteMembers():
 def deleteBook():
 	data = request.get_json()
 	title = data['delete_book_title']
+
+	book_id_query = "Select id from Books where title = %s"
+	book_id_params = (title, )
+	cursor.execute(book_id_query, book_id_params)
+	temp = cursor.fetchone()
+	if temp is None:
+		return {'res':' this book is not present in store '}
+
 	query = "DELETE from Books where title = %s"
 	params = (title, )
 	cursor.execute(query, params)
@@ -465,49 +379,3 @@ def deleteBook():
 
 if __name__ == '__main__':
     app.run(port = 8000)
-
-
-	# response = requests.get(base_url + query_params).content.decode('utf-8')
-	# response_json = json.loads(response)
-	# books = response_json['message']
-
-	# for i in books:
-	# 	new_book = (i['bookID'], i['title'], i['authors'], i['publisher'], )
-
-
-# import requests
-# import re
-
-# def get_books_by_title(title):
-#     books = []
-#     page = 1
-#     last_page = None
-#     while last_page is None or page <= last_page:
-#         url = f'https://frappe.io/api/method/frappe-library?page={page}'
-#         response = requests.get(url)
-#         # print(response.content)
-        
-#         if response.status_code == 200:
-#             # books += response.json()
-            
-#             # Extract last page from Link header
-
-#             link_header = response.headers.get('Link', '')
-#             last_page_match = re.search(r'&page=(\d+)>; rel="last"', link_header)
-            
-#             if last_page_match:
-#                 last_page = int(last_page_match.group(1))
-                
-#             page += 1
-#             # print(last_page, ' ', page)
-#         else:
-#             break
-#     print(page)
-    # return books
-
-
-# title = "The Poetry of Sylvia Plath"
-# get_books_by_title(title)
-
-
-
